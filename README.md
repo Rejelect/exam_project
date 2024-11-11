@@ -66,18 +66,55 @@ Dependencies include packages for data processing (pandas, numpy), visualization
 
 Example:
 ```python
-from engineer import FeatureTransformer
-import pandas as pd
-from joblib import load
-
-# Load and preprocess data
 data = pd.read_csv('your_data.csv')
-transformer = FeatureTransformer()
-processed_data = transformer.transform(data)
 
-# Load model and predict
-model = load('model.pkl')
-predictions = model.predict(processed_data)
+model1 = RandomForestClassifier(random_state=42,
+                                max_depth = 16,
+                                n_estimators=191, 
+                                min_samples_split = 10, 
+                                min_samples_leaf = 4, 
+                                bootstrap= True,  
+                                max_features = 'log2', 
+                                criterion='entropy')
+
+model2 = RandomForestClassifier(criterion='entropy', 
+                                max_depth=30,
+                                min_samples_leaf=7,
+                                min_samples_split=21,
+                                max_features = 'log2',
+                                n_estimators=499,
+                                bootstrap = False,
+                                random_state=42)
+
+bagging_model1 = BaggingClassifier(estimator=model1,
+                                   n_estimators=50,
+                                   random_state=42,
+                                   bootstrap_features=True,
+                                   n_jobs = -1)
+
+bagging_model2 = BaggingClassifier(estimator=model2, 
+                                   n_estimators=15, 
+                                   random_state=42, 
+                                   n_jobs = -1)
+
+base_model = Pipeline([
+                    ("poly", PolynomialFeatures(degree=2, include_bias=False)),
+                    ("scaler", StandardScaler()),
+                    ("logic", LogisticRegression(penalty="elasticnet", 
+                                                solver="saga", 
+                                                C=67.71250104715932, 
+                                                l1_ratio=0.2318363725602379))])
+
+stacking = StackingClassifier(estimators=[
+                                        ('bagging1', bagging_model1),
+                                        ('bagging2', bagging_model2)
+                                        ],
+                            final_estimator= base_model,
+                            cv=5, 
+                            n_jobs = -1)
+
+stacking.fit(X, y)
+predictions = stacking.predict(processed_data)
 ```
 ### Results
 The results and evaluation metrics are documented in the analyse.ipynb, analys.ipynb, and model.ipynb notebooks. Visualizations, feature importance plots, and calibration plots are also included to provide insights into model performance and prediction reliability.
